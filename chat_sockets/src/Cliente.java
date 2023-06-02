@@ -57,8 +57,8 @@ class LaminaMarcoCliente extends JPanel implements Runnable{//Runnable nos servi
         JLabel texto = new JLabel("Online: ");
         add(texto);
         ip = new JComboBox();
-        ip.addItem("192.168.1.66");
-        ip.addItem("192.168.1.67");
+        //ip.addItem("192.168.1.66");
+        //ip.addItem("192.168.1.67");
         add(ip);
         campoChat = new JTextArea(12,20);
         add(campoChat);
@@ -86,7 +86,12 @@ class LaminaMarcoCliente extends JPanel implements Runnable{//Runnable nos servi
                     campoChat.append("\n" + paqueteRecibido.getNick() + ":" + paqueteRecibido.getMensaje());
                 }
                 else{
-                    campoChat.append("\n" + paqueteRecibido.getListaIp()); //nos devuelve el arraylist con las ips en linea
+                    ArrayList <String> ipMenu = new ArrayList<String>();
+                    ipMenu = paqueteRecibido.getListaIp();
+                    ip.removeAllItems(); //Cada vez que un cliente se conecte se borra la lista de ips y se reemplaza por la actualizada
+                    for(String z:ipMenu){
+                        ip.addItem(z); //Se agregan las ips al menu del chat
+                    }
                 }
             }
         } catch(Exception e){
