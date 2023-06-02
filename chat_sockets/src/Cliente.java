@@ -4,6 +4,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.*;
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
 
 public class Cliente {
     public static void main(String[] args) {
@@ -26,7 +27,7 @@ class MarcoCliente extends JFrame{
 class EnvioOnline extends WindowAdapter{
     public void windowOpened(WindowEvent e){ //Cuando se abra la ventana se enviara la señal de que el usuario esta en linea
         try {
-            Socket miSocket = new Socket("192.168.1.64",3690);
+            Socket miSocket = new Socket("192.168.1.64",3690); //la ip del servidor
             EnvioDePaquete paqueteEnviado = new EnvioDePaquete();
             paqueteEnviado.setMensaje(" Online");
             ObjectOutputStream paqueteDatos = new ObjectOutputStream(miSocket.getOutputStream());
@@ -81,7 +82,12 @@ class LaminaMarcoCliente extends JPanel implements Runnable{//Runnable nos servi
                 cliente = servidorCliente.accept(); //de esta forma el socket acepta todas las conexiones que vengan del exterior
                 ObjectInputStream paquete = new ObjectInputStream(cliente.getInputStream()); //Se crea un flujo de datos de entrada
                 paqueteRecibido = (EnvioDePaquete) paquete.readObject();
-                campoChat.append("\n" + paqueteRecibido.getNick() + ":" + paqueteRecibido.getMensaje());
+                if(!paqueteRecibido.getMensaje().equals(" Online")){ //si no recibio el mensaje de online, significa que ya esta chateando
+                    campoChat.append("\n" + paqueteRecibido.getNick() + ":" + paqueteRecibido.getMensaje());
+                }
+                else{
+                    campoChat.append("\n" + paqueteRecibido.getListaIp()); //nos devuelve el arraylist con las ips en linea
+                }
             }
         } catch(Exception e){
             System.out.println(e.getMessage()); //manda como mensaje el error
@@ -110,6 +116,15 @@ class LaminaMarcoCliente extends JPanel implements Runnable{//Runnable nos servi
 
 class EnvioDePaquete implements Serializable { //Con esto indicamos que todas las instancias son capaces de convertirse en bytes
     private String nick, ip, mensaje;
+    private ArrayList<String> listaIp;
+
+    public ArrayList<String> getListaIp() {
+        return listaIp;
+    }
+
+    public void setListaIp(ArrayList<String> listaIp) {
+        this.listaIp = listaIp;
+    }
 
     public String getMensaje() {
         return mensaje;

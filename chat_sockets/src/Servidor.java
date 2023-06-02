@@ -3,6 +3,7 @@ import java.awt.*;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.*;
+import java.util.ArrayList;
 
 public class Servidor  {
     public static void main(String[] args) {
@@ -33,6 +34,7 @@ class MarcoServidor extends JFrame implements Runnable{//Runnable nos servira pa
             ServerSocket servidor = new ServerSocket(3690);//Con esto esta a la escucha y que abra este puerto
             String nick, ip, mensaje;
             EnvioDePaquete paqueteRecibido;
+            ArrayList <String> listaIp = new ArrayList<>(); //se crea una lista con las ips online
 
             while(true) { //Creamos un bucle infinito para que fluya el chat
                 Socket miSocket = servidor.accept(); //Con esto acepta las conexiones del exterior con este puerto
@@ -41,7 +43,7 @@ class MarcoServidor extends JFrame implements Runnable{//Runnable nos servira pa
                 nick = paqueteRecibido.getNick();
                 ip = paqueteRecibido.getIp();//se almacena toda la informacion del paquete recibido
                 mensaje = paqueteRecibido.getMensaje();
-                if(!mensaje.equals(" online")) { //si ya esta conectado, no manda señal, para evitar errores
+                if(!mensaje.equals(" Online")) { //si ya esta conectado, no manda señal, para evitar errores
                     areaTexto.append("\n" + nick + ":" + mensaje + " para " + ip);
                     Socket enviaDestinatario = new Socket(ip, 9630); // se reenviara el paquete recibido al servidor a la ip destino
                     ObjectOutputStream reenvioPaquete = new ObjectOutputStream(enviaDestinatario.getOutputStream()); //Se crea un flujo de datos de salida
@@ -54,7 +56,17 @@ class MarcoServidor extends JFrame implements Runnable{//Runnable nos servira pa
                     //----detecta online------
                     InetAddress localizacion = miSocket.getInetAddress(); //detecta las ip conectadas
                     String ipRemota = localizacion.getHostAddress(); // se almacena la ip en la variable
-                    System.out.println("Online " + ipRemota); // Se muestra mensaje de usuario conectado
+                    paqueteRecibido.setListaIp(listaIp);
+                    listaIp.add(ipRemota); //Se agrega la ip online a la lista
+                    for(String z:listaIp){
+                        System.out.println("Array: " + z);
+                        Socket enviaDestinatario = new Socket(z, 9630); // se reenviara el paquete recibido al servidor a la ip destino
+                        ObjectOutputStream reenvioPaquete = new ObjectOutputStream(enviaDestinatario.getOutputStream()); //Se crea un flujo de datos de salida
+                        reenvioPaquete.writeObject(paqueteRecibido); //se almacena en el flujo el paquete que se reenviara
+                        enviaDestinatario.close();//se cierra el socket
+                        reenvioPaquete.close(); //se cierra el flujo de datos
+                        miSocket.close();//se cierra la conexión
+                    }
                     //----fin----
                 }
             }
