@@ -18,20 +18,46 @@ class MarcoCliente extends JFrame{
         LaminaMarcoCliente miLamina=new LaminaMarcoCliente();
         add(miLamina);
         setVisible(true);
+        addWindowListener(new EnvioOnline()); // se ejecuta el envioOnline
     }
 }
 
+//-----Envio señal Online-----
+class EnvioOnline extends WindowAdapter{
+    public void windowOpened(WindowEvent e){ //Cuando se abra la ventana se enviara la señal de que el usuario esta en linea
+        try {
+            Socket miSocket = new Socket("192.168.1.64",3690);
+            EnvioDePaquete paqueteEnviado = new EnvioDePaquete();
+            paqueteEnviado.setMensaje(" Online");
+            ObjectOutputStream paqueteDatos = new ObjectOutputStream(miSocket.getOutputStream());
+            paqueteDatos.writeObject(paqueteEnviado);
+            miSocket.close();
+        } catch (Exception ee){
+            System.out.println(ee.getMessage()); //manda como mensaje el error
+        }
+    }
+}
+//-----Final Envio señal Online-----
+
 class LaminaMarcoCliente extends JPanel implements Runnable{//Runnable nos servira para que el servidor este permanentemente a la escucha
-    private JTextField mensaje, nick, ip;
+    private JTextField mensaje;
+    private JComboBox ip;
+    private JLabel nick;
     private JButton miBoton;
     private JTextArea campoChat;
 
     public LaminaMarcoCliente(){
-        nick = new JTextField(5);
+        String nickUsuario = JOptionPane.showInputDialog("Nick: ");
+        JLabel n_nick = new JLabel("Nick: ");
+        add(n_nick);
+        nick = new JLabel();
+        nick.setText(nickUsuario);
         add(nick);
-        JLabel texto = new JLabel("-CHAT-");
+        JLabel texto = new JLabel("Online: ");
         add(texto);
-        ip = new JTextField(8);
+        ip = new JComboBox();
+        ip.addItem("192.168.1.66");
+        ip.addItem("192.168.1.67");
         add(ip);
         campoChat = new JTextArea(12,20);
         add(campoChat);
@@ -55,7 +81,7 @@ class LaminaMarcoCliente extends JPanel implements Runnable{//Runnable nos servi
                 cliente = servidorCliente.accept(); //de esta forma el socket acepta todas las conexiones que vengan del exterior
                 ObjectInputStream paquete = new ObjectInputStream(cliente.getInputStream()); //Se crea un flujo de datos de entrada
                 paqueteRecibido = (EnvioDePaquete) paquete.readObject();
-                campoChat.append("\n" + paqueteRecibido.getNick() + ":" + paqueteRecibido.getMensaje() + " para " + paqueteRecibido.getIp());
+                campoChat.append("\n" + paqueteRecibido.getNick() + ":" + paqueteRecibido.getMensaje());
             }
         } catch(Exception e){
             System.out.println(e.getMessage()); //manda como mensaje el error
@@ -65,16 +91,16 @@ class LaminaMarcoCliente extends JPanel implements Runnable{//Runnable nos servi
     private class EnviaTexto implements ActionListener{
         @Override
         public void actionPerformed(ActionEvent e) {
+            campoChat.append("\n" + mensaje.getText());//Se acumula lo que escribimos en el chat
             try {
                 Socket miSocket = new Socket("192.168.1.64",3690); //Los numero magicos segun Nicola Tesla jiji
                 EnvioDePaquete paqueteEnviado = new EnvioDePaquete();
                 paqueteEnviado.setNick(nick.getText());
-                paqueteEnviado.setIp(ip.getText());  //se almacena toda la informacion en el objeto "datos"
+                paqueteEnviado.setIp(ip.getSelectedItem().toString());  //se almacena toda la informacion en el objeto "datos"
                 paqueteEnviado.setMensaje(mensaje.getText());
                 ObjectOutputStream paquete = new ObjectOutputStream(miSocket.getOutputStream()); //Se crea un flujo de datos de salida
                 paquete.writeObject(paqueteEnviado); //se almacena en el flujo el paquete que se enviara
                 miSocket.close(); //se cierra el flujo de salida
-
             } catch (IOException ex) {
                 System.out.println(ex.getMessage()); //manda como mensaje el error
             }

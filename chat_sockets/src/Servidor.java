@@ -41,12 +41,22 @@ class MarcoServidor extends JFrame implements Runnable{//Runnable nos servira pa
                 nick = paqueteRecibido.getNick();
                 ip = paqueteRecibido.getIp();//se almacena toda la informacion del paquete recibido
                 mensaje = paqueteRecibido.getMensaje();
-                areaTexto.append("\n" + nick + ":" + mensaje + " para " + ip);
-                Socket enviaDestinatario = new Socket(ip,9630); // se reenviara el paquete recibido al servidor a la ip destino
-                ObjectOutputStream reenvioPaquete = new ObjectOutputStream(enviaDestinatario.getOutputStream()); //Se crea un flujo de datos de salida
-                reenvioPaquete.writeObject(paqueteRecibido); //se almacena en el flujo el paquete que se reenviara
-                enviaDestinatario.close();//se cierra el socket
-                miSocket.close();//se cierra la conexión
+                if(!mensaje.equals(" online")) { //si ya esta conectado, no manda señal, para evitar errores
+                    areaTexto.append("\n" + nick + ":" + mensaje + " para " + ip);
+                    Socket enviaDestinatario = new Socket(ip, 9630); // se reenviara el paquete recibido al servidor a la ip destino
+                    ObjectOutputStream reenvioPaquete = new ObjectOutputStream(enviaDestinatario.getOutputStream()); //Se crea un flujo de datos de salida
+                    reenvioPaquete.writeObject(paqueteRecibido); //se almacena en el flujo el paquete que se reenviara
+                    enviaDestinatario.close();//se cierra el socket
+                    reenvioPaquete.close(); //se cierra el flujo de datos
+                    miSocket.close();//se cierra la conexión
+                }
+                else{
+                    //----detecta online------
+                    InetAddress localizacion = miSocket.getInetAddress(); //detecta las ip conectadas
+                    String ipRemota = localizacion.getHostAddress(); // se almacena la ip en la variable
+                    System.out.println("Online " + ipRemota); // Se muestra mensaje de usuario conectado
+                    //----fin----
+                }
             }
         } catch (IOException | ClassNotFoundException e) {
             System.out.println(e.getMessage()); //manda como mensaje el error
