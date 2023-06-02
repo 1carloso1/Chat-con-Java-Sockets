@@ -68,7 +68,18 @@ class LaminaMarcoCliente extends JPanel implements Runnable{//Runnable nos servi
         EnviaTexto miEvento = new EnviaTexto();
         botonEnviar.addActionListener(miEvento);
         add(botonEnviar);
-        botonEnviarArchivo =new JButton("Archivo");
+        botonEnviarArchivo = new JButton("Archivo");
+        botonEnviarArchivo.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                JFileChooser fileChooser = new JFileChooser();
+                int seleccion = fileChooser.showOpenDialog(LaminaMarcoCliente.this);
+                if (seleccion == JFileChooser.APPROVE_OPTION) {
+                    File archivoSeleccionado = fileChooser.getSelectedFile();
+                    String rutaArchivo = archivoSeleccionado.getAbsolutePath();
+                    mensaje.setText(rutaArchivo);
+                }
+            }
+        });
         add(botonEnviarArchivo);
         Thread miHilo = new Thread(this);//Creamos un hilo
         miHilo.start();
@@ -88,7 +99,7 @@ class LaminaMarcoCliente extends JPanel implements Runnable{//Runnable nos servi
                     campoChat.append("\n" + paqueteRecibido.getNick() + ":" + paqueteRecibido.getMensaje());
                 }
                 else{
-                    ArrayList <String> ipMenu = new ArrayList<String>();
+                    ArrayList <String> ipMenu;
                     ipMenu = paqueteRecibido.getListaIp();
                     ip.removeAllItems(); //Cada vez que un cliente se conecte se borra la lista de ips y se reemplaza por la actualizada
                     for(String z:ipMenu){
