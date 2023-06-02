@@ -1,5 +1,4 @@
 import javax.swing.*;
-import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.*;
 import java.io.*;
@@ -44,7 +43,8 @@ class LaminaMarcoCliente extends JPanel implements Runnable{//Runnable nos servi
     private JTextField mensaje;
     private JComboBox ip;
     private JLabel nick;
-    private JButton miBoton;
+    private JButton botonEnviar;
+    private JButton botonEnviarArchivo;
     private JTextArea campoChat;
 
     public LaminaMarcoCliente(){
@@ -64,10 +64,12 @@ class LaminaMarcoCliente extends JPanel implements Runnable{//Runnable nos servi
         add(campoChat);
         mensaje =new JTextField(20);
         add(mensaje);
-        miBoton =new JButton("Enviar");
+        botonEnviar =new JButton("Enviar");
         EnviaTexto miEvento = new EnviaTexto();
-        miBoton.addActionListener(miEvento);
-        add(miBoton);
+        botonEnviar.addActionListener(miEvento);
+        add(botonEnviar);
+        botonEnviarArchivo =new JButton("Archivo");
+        add(botonEnviarArchivo);
         Thread miHilo = new Thread(this);//Creamos un hilo
         miHilo.start();
     }
