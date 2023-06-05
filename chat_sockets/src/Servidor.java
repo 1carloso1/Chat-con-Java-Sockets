@@ -12,66 +12,93 @@ public class Servidor  {
     }
 }
 
-class MarcoServidor extends JFrame implements Runnable{//Runnable nos servira para que el servidor este permanentemente a la escucha
+class MarcoServidor extends JFrame implements Runnable {
+    private JTextArea areaTexto;
 
-    private	JTextArea areaTexto;
-
-    public MarcoServidor(){
-        setBounds(1200,300,280,350);
+    public MarcoServidor() {
+        setBounds(1200, 300, 280, 350);
         JPanel miLamina= new JPanel();
         miLamina.setLayout(new BorderLayout());
-        areaTexto =new JTextArea();
-        miLamina.add(areaTexto,BorderLayout.CENTER);
+        areaTexto = new JTextArea();
+        miLamina.add(areaTexto, BorderLayout.CENTER);
         add(miLamina);
         setVisible(true);
-        Thread miHilo = new Thread(this); //Creamos un hilo
+        Thread miHilo = new Thread(this);
         miHilo.start();
     }
 
     @Override
-    public void run() { // el codigo que se encargara de la escucha se encontrara aqui
+    public void run() {
         try {
-            ServerSocket servidor = new ServerSocket(3690);//Con esto esta a la escucha y que abra este puerto
+            ServerSocket servidor = new ServerSocket(3690);
             String nick, ip, mensaje;
             EnvioDePaquete paqueteRecibido;
-            ArrayList <String> listaIp = new ArrayList<>(); //se crea una lista con las ips online
+            ArrayList<String> listaIp = new ArrayList<>();
 
-            while(true) { //Creamos un bucle infinito para que fluya el chat
-                Socket miSocket = servidor.accept(); //Con esto acepta las conexiones del exterior con este puerto
-                ObjectInputStream paquete = new ObjectInputStream(miSocket.getInputStream());//Se crea un flujo de datos de entrada
-                paqueteRecibido = (EnvioDePaquete)paquete.readObject(); //se almacena el paquete recibido
+            while (true) {
+                Socket miSocket = servidor.accept();
+                ObjectInputStream paquete = new ObjectInputStream(miSocket.getInputStream());
+                paqueteRecibido = (EnvioDePaquete) paquete.readObject();
                 nick = paqueteRecibido.getNick();
-                ip = paqueteRecibido.getIp();//se almacena toda la informacion del paquete recibido
+                ip = paqueteRecibido.getIp();
                 mensaje = paqueteRecibido.getMensaje();
-                if(!mensaje.equals(" Online")) { //si ya esta conectado, no manda señal, para evitar errores
+
+                // Verifica si el mensaje es un archivo
+                if (mensaje.startsWith("Archivo:")) {
+                    String nombreArchivo = mensaje.substring(8);
+                    recibirArchivo(nombreArchivo, miSocket);
+                } else if (!mensaje.equals(" Online")) {
                     areaTexto.append("\n" + nick + ":" + mensaje + " para " + ip);
-                    Socket enviaDestinatario = new Socket(ip, 9630); // se reenviara el paquete recibido al servidor a la ip destino
-                    ObjectOutputStream reenvioPaquete = new ObjectOutputStream(enviaDestinatario.getOutputStream()); //Se crea un flujo de datos de salida
-                    reenvioPaquete.writeObject(paqueteRecibido); //se almacena en el flujo el paquete que se reenviara
-                    enviaDestinatario.close();//se cierra el socket
-                    reenvioPaquete.close(); //se cierra el flujo de datos
-                    miSocket.close();//se cierra la conexión
-                }
-                else{
-                    //----detecta online------
-                    InetAddress localizacion = miSocket.getInetAddress(); //detecta las ip conectadas
-                    String ipRemota = localizacion.getHostAddress(); // se almacena la ip en la variable
+                    Socket enviaDestinatario = new Socket(ip, 9630);
+                    ObjectOutputStream reenvioPaquete = new ObjectOutputStream(enviaDestinatario.getOutputStream());
+                    reenvioPaquete.writeObject(paqueteRecibido);
+                    enviaDestinatario.close();
+                    reenvioPaquete.close();
+                    miSocket.close();
+                } else {
+                    InetAddress localizacion = miSocket.getInetAddress();
+                    String ipRemota = localizacion.getHostAddress();
                     paqueteRecibido.setListaIp(listaIp);
-                    listaIp.add(ipRemota); //Se agrega la ip online a la lista
-                    for(String z:listaIp){
+                    listaIp.add(ipRemota);
+                    for (String z : listaIp) {
                         System.out.println("Array: " + z);
-                        Socket enviaDestinatario = new Socket(z, 9630); // se reenviara el paquete recibido al servidor a la ip destino
-                        ObjectOutputStream reenvioPaquete = new ObjectOutputStream(enviaDestinatario.getOutputStream()); //Se crea un flujo de datos de salida
-                        reenvioPaquete.writeObject(paqueteRecibido); //se almacena en el flujo el paquete que se reenviara
-                        enviaDestinatario.close();//se cierra el socket
-                        reenvioPaquete.close(); //se cierra el flujo de datos
-                        miSocket.close();//se cierra la conexión
+                        Socket enviaDestinatario = new Socket(z, 9630);
+                        ObjectOutputStream reenvioPaquete = new ObjectOutputStream(enviaDestinatario.getOutputStream());
+                        reenvioPaquete.writeObject(paqueteRecibido);
+                        enviaDestinatario.close();
+                        reenvioPaquete.close();
+                        miSocket.close();
                     }
-                    //----fin----
                 }
             }
         } catch (IOException | ClassNotFoundException e) {
-            System.out.println(e.getMessage()); //manda como mensaje el error
+            System.out.println(e.getMessage());
+        }
+    }
+
+    private void recibirArchivo(String nombreArchivo, Socket socket) {
+        try {
+            DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
+            int tamanoArchivo = dataInputStream.readInt();
+            System.out.println("Recibiendo archivo: " + nombreArchivo + " (" + tamanoArchivo + " bytes)");
+
+            FileOutputStream fileOutputStream = new FileOutputStream(nombreArchivo);
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+            int totalBytesRead = 0;
+            while ((bytesRead = dataInputStream.read(buffer)) != -1) {
+                fileOutputStream.write(buffer, 0, bytesRead);
+                totalBytesRead += bytesRead;
+                if (totalBytesRead >= tamanoArchivo) {
+                    break;
+                }
+            }
+            System.out.println("Archivo recibido: " + nombreArchivo);
+            fileOutputStream.close();
+            socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }
+
