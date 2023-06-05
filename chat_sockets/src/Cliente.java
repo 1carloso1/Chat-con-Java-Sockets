@@ -7,15 +7,15 @@ import java.util.ArrayList;
 
 public class Cliente {
     public static void main(String[] args) {
-        MarcoCliente miMarco=new MarcoCliente();
+        MarcoCliente miMarco = new MarcoCliente();
         miMarco.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
 }
 
-class MarcoCliente extends JFrame{
-    public MarcoCliente(){
-        setBounds(600,300,280,350);
-        LaminaMarcoCliente miLamina=new LaminaMarcoCliente();
+class MarcoCliente extends JFrame {
+    public MarcoCliente() {
+        setBounds(600, 300, 280, 350);
+        LaminaMarcoCliente miLamina = new LaminaMarcoCliente();
         add(miLamina);
         setVisible(true);
         addWindowListener(new EnvioOnline()); // se ejecuta el envioOnline
@@ -23,31 +23,31 @@ class MarcoCliente extends JFrame{
 }
 
 //-----Envio señal Online-----
-class EnvioOnline extends WindowAdapter{
-    public void windowOpened(WindowEvent e){ //Cuando se abra la ventana se enviara la señal de que el usuario esta en linea
+class EnvioOnline extends WindowAdapter {
+    public void windowOpened(WindowEvent e) { //Cuando se abra la ventana se enviara la señal de que el usuario esta en linea
         try {
-            Socket miSocket = new Socket("192.168.1.64",3690); //la ip del servidor
+            Socket miSocket = new Socket("192.168.1.64", 3690); //la ip del servidor
             EnvioDePaquete paqueteEnviado = new EnvioDePaquete();
             paqueteEnviado.setMensaje(" Online");
             ObjectOutputStream paqueteDatos = new ObjectOutputStream(miSocket.getOutputStream());
             paqueteDatos.writeObject(paqueteEnviado);
             miSocket.close();
-        } catch (Exception ee){
+        } catch (Exception ee) {
             System.out.println(ee.getMessage()); //manda como mensaje el error
         }
     }
 }
 //-----Final Envio señal Online-----
 
-class LaminaMarcoCliente extends JPanel implements Runnable{//Runnable nos servira para que el servidor este permanentemente a la escucha
+class LaminaMarcoCliente extends JPanel implements Runnable {//Runnable nos servira para que el servidor este permanentemente a la escucha
     private JTextField mensaje;
-    private JComboBox ip;
+    private JComboBox<String> ip;
     private JLabel nick;
     private JButton botonEnviar;
     private JButton botonEnviarArchivo;
     private JTextArea campoChat;
 
-    public LaminaMarcoCliente(){
+    public LaminaMarcoCliente() {
         String nickUsuario = JOptionPane.showInputDialog("Nick: ");
         JLabel n_nick = new JLabel("Nick: ");
         add(n_nick);
@@ -56,15 +56,13 @@ class LaminaMarcoCliente extends JPanel implements Runnable{//Runnable nos servi
         add(nick);
         JLabel texto = new JLabel("Online: ");
         add(texto);
-        ip = new JComboBox();
-        //ip.addItem("192.168.1.66");
-        //ip.addItem("192.168.1.67");
+        ip = new JComboBox<>();
         add(ip);
-        campoChat = new JTextArea(12,20);
-        add(campoChat);
-        mensaje =new JTextField(20);
+        campoChat = new JTextArea(12, 20);
+        add(new JScrollPane(campoChat));
+        mensaje = new JTextField(20);
         add(mensaje);
-        botonEnviar =new JButton("Enviar");
+        botonEnviar = new JButton("Enviar");
         EnviaTexto eventoMensaje = new EnviaTexto();
         botonEnviar.addActionListener(eventoMensaje);
         add(botonEnviar);
@@ -108,12 +106,12 @@ class LaminaMarcoCliente extends JPanel implements Runnable{//Runnable nos servi
         }
     }
 
-    private class EnviaTexto implements ActionListener{
+    private class EnviaTexto implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
             campoChat.append("\n" + mensaje.getText());//Se acumula lo que escribimos en el chat
             try {
-                Socket miSocket = new Socket("192.168.1.64",3690); //Los numero magicos segun Nicola Tesla jiji
+                Socket miSocket = new Socket("192.168.1.64", 3690); //Los numero magicos segun Nicola Tesla jiji
                 EnvioDePaquete paqueteEnviado = new EnvioDePaquete();
                 paqueteEnviado.setNick(nick.getText());
                 paqueteEnviado.setIp(ip.getSelectedItem().toString());  //se almacena toda la informacion en el objeto "datos"
@@ -153,8 +151,18 @@ class LaminaMarcoCliente extends JPanel implements Runnable{//Runnable nos servi
 
                     byte[] buffer = new byte[4096];
                     int bytesRead;
+                    int totalBytesRead = 0;
+                    double tiempoInicio = System.currentTimeMillis();
+                    double tiempoTranscurrido = 0;
+                    double tasaTransferencia = 0;
                     while ((bytesRead = fileInputStream.read(buffer)) != -1) {
                         dataOutputStream.write(buffer, 0, bytesRead);
+                        totalBytesRead += bytesRead;
+                        tiempoTranscurrido = (System.currentTimeMillis() - tiempoInicio) / 1000.0;
+                        tasaTransferencia = totalBytesRead / tiempoTranscurrido;
+                        String tiempoTranscurridoFormateado = formatearTiempo(tiempoTranscurrido);
+                        String tasaTransferenciaFormateada = formatearTasaTransferencia(tasaTransferencia);
+                        System.out.println("Tasa de transferencia: " + tasaTransferenciaFormateada + "/s" + " - Tiempo transcurrido: " + tiempoTranscurridoFormateado);
                     }
 
                     campoChat.append("\n" + "Archivo enviado: " + archivoSeleccionado.getName());//Se acumula lo que escribimos en el chat
@@ -166,6 +174,22 @@ class LaminaMarcoCliente extends JPanel implements Runnable{//Runnable nos servi
                     ex.printStackTrace();
                 }
             }
+        }
+
+        private String formatearTiempo(double tiempo) {
+            int minutos = (int) (tiempo / 60);
+            int segundos = (int) (tiempo % 60);
+            return String.format("%02d:%02d", minutos, segundos);
+        }
+
+        private String formatearTasaTransferencia(double tasa) {
+            String[] unidades = {"B/s", "KB/s", "MB/s", "GB/s", "TB/s"};
+            int index = 0;
+            while (tasa >= 1024 && index < unidades.length - 1) {
+                tasa /= 1024;
+                index++;
+            }
+            return String.format("%.2f %s", tasa, unidades[index]);
         }
     }
 
@@ -179,12 +203,17 @@ class LaminaMarcoCliente extends JPanel implements Runnable{//Runnable nos servi
             byte[] buffer = new byte[4096];
             int bytesRead;
             int totalBytesRead = 0;
+            double tiempoInicio = System.currentTimeMillis();
+            double tiempoTranscurrido = 0;
+            double tasaTransferencia = 0;
             while ((bytesRead = dataInputStream.read(buffer)) != -1) {
                 fileOutputStream.write(buffer, 0, bytesRead);
                 totalBytesRead += bytesRead;
-                if (totalBytesRead >= tamanoArchivo) {
-                    break;
-                }
+                tiempoTranscurrido = (System.currentTimeMillis() - tiempoInicio) / 1000.0;
+                tasaTransferencia = totalBytesRead / tiempoTranscurrido;
+                String tiempoTranscurridoFormateado = formatearTiempo(tiempoTranscurrido);
+                String tasaTransferenciaFormateada = formatearTasaTransferencia(tasaTransferencia);
+                System.out.println("Tasa de transferencia: " + tasaTransferenciaFormateada + "/s" + " - Tiempo transcurrido: " + tiempoTranscurridoFormateado);
             }
             System.out.println("Archivo recibido: " + nombreArchivo);
             fileOutputStream.close();
@@ -197,41 +226,59 @@ class LaminaMarcoCliente extends JPanel implements Runnable{//Runnable nos servi
         }
     }
 
+    private String formatearTiempo(double tiempo) {
+        int minutos = (int) (tiempo / 60);
+        int segundos = (int) (tiempo % 60);
+        return String.format("%02d:%02d", minutos, segundos);
+    }
+
+    private String formatearTasaTransferencia(double tasa) {
+        String[] unidades = {"B/s", "KB/s", "MB/s", "GB/s", "TB/s"};
+        int index = 0;
+        while (tasa >= 1024 && index < unidades.length - 1) {
+            tasa /= 1024;
+            index++;
+        }
+        return String.format("%.2f %s", tasa, unidades[index]);
+    }
+
 }
 
-class EnvioDePaquete implements Serializable { //Con esto indicamos que todas las instancias son capaces de convertirse en bytes
-    private String nick, ip, mensaje;
+class EnvioDePaquete implements Serializable {
+    private String nick;
+    private String ip;
+    private String mensaje;
     private ArrayList<String> listaIp;
 
-    public ArrayList<String> getListaIp() {
-        return listaIp;
-    }
-
-    public void setListaIp(ArrayList<String> listaIp) {
-        this.listaIp = listaIp;
-    }
-
-    public String getMensaje() {
-        return mensaje;
-    }
-
-    public void setMensaje(String mensaje) {
-        this.mensaje = mensaje;
-    }
-
-    public String getIp() {
-        return ip;
+    public void setNick(String nick) {
+        this.nick = nick;
     }
 
     public void setIp(String ip) {
         this.ip = ip;
     }
 
+    public void setMensaje(String mensaje) {
+        this.mensaje = mensaje;
+    }
+
+    public void setListaIp(ArrayList<String> listaIp) {
+        this.listaIp = listaIp;
+    }
+
     public String getNick() {
         return nick;
     }
 
-    public void setNick(String nick) {
-        this.nick = nick;
+    public String getIp() {
+        return ip;
+    }
+
+    public String getMensaje() {
+        return mensaje;
+    }
+
+    public ArrayList<String> getListaIp() {
+        return listaIp;
     }
 }
