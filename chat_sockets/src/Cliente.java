@@ -108,32 +108,6 @@ class LaminaMarcoCliente extends JPanel implements Runnable{//Runnable nos servi
         }
     }
 
-    private void recibirArchivo(String nombreArchivo, Socket socket) {
-        try {
-            DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
-            int tamanoArchivo = dataInputStream.readInt();
-            System.out.println("Recibiendo archivo: " + nombreArchivo + " (" + tamanoArchivo + " bytes)");
-
-            FileOutputStream fileOutputStream = new FileOutputStream(nombreArchivo);
-            byte[] buffer = new byte[4096];
-            int bytesRead;
-            int totalBytesRead = 0;
-            while ((bytesRead = dataInputStream.read(buffer)) != -1) {
-                fileOutputStream.write(buffer, 0, bytesRead);
-                totalBytesRead += bytesRead;
-                if (totalBytesRead >= tamanoArchivo) {
-                    break;
-                }
-            }
-            System.out.println("Archivo recibido: " + nombreArchivo);
-            fileOutputStream.close();
-            socket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-
     private class EnviaTexto implements ActionListener{
         @Override
         public void actionPerformed(ActionEvent e) {
@@ -183,7 +157,7 @@ class LaminaMarcoCliente extends JPanel implements Runnable{//Runnable nos servi
                         dataOutputStream.write(buffer, 0, bytesRead);
                     }
 
-                    System.out.println("Archivo enviado: " + archivoSeleccionado.getName());
+                    campoChat.append("\n" + "Archivo enviado: " + archivoSeleccionado.getName());//Se acumula lo que escribimos en el chat
 
                     fileInputStream.close();
                     dataOutputStream.close();
@@ -192,6 +166,34 @@ class LaminaMarcoCliente extends JPanel implements Runnable{//Runnable nos servi
                     ex.printStackTrace();
                 }
             }
+        }
+    }
+
+    private void recibirArchivo(String nombreArchivo, Socket socket) {
+        try {
+            DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
+            int tamanoArchivo = dataInputStream.readInt();
+            System.out.println("Recibiendo archivo: " + nombreArchivo + " (" + tamanoArchivo + " bytes)");
+
+            FileOutputStream fileOutputStream = new FileOutputStream(nombreArchivo);
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+            int totalBytesRead = 0;
+            while ((bytesRead = dataInputStream.read(buffer)) != -1) {
+                fileOutputStream.write(buffer, 0, bytesRead);
+                totalBytesRead += bytesRead;
+                if (totalBytesRead >= tamanoArchivo) {
+                    break;
+                }
+            }
+            System.out.println("Archivo recibido: " + nombreArchivo);
+            fileOutputStream.close();
+            socket.close();
+
+            // Agrega el mensaje de archivo recibido al campo de texto
+            campoChat.append("\n" + "Archivo recibido: " + nombreArchivo + "\n");
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

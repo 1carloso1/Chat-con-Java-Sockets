@@ -80,7 +80,7 @@ class MarcoServidor extends JFrame implements Runnable {
         try {
             DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
             int tamanoArchivo = dataInputStream.readInt();
-            System.out.println("Recibiendo archivo: " + nombreArchivo + " (" + tamanoArchivo + " bytes)");
+            areaTexto.append("\n" + "Recibiendo archivo: " + nombreArchivo + " (" + tamanoArchivo + " bytes)");
 
             FileOutputStream fileOutputStream = new FileOutputStream(nombreArchivo);
             byte[] buffer = new byte[4096];
@@ -93,7 +93,7 @@ class MarcoServidor extends JFrame implements Runnable {
                     break;
                 }
             }
-            System.out.println("Archivo recibido: " + nombreArchivo);
+            areaTexto.append("\n" + "Archivo recibido: " + nombreArchivo );
             fileOutputStream.close();
             socket.close();
         } catch (IOException e) {
