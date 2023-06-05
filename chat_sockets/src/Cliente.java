@@ -69,6 +69,7 @@ class LaminaMarcoCliente extends JPanel implements Runnable{//Runnable nos servi
         botonEnviar.addActionListener(miEvento);
         add(botonEnviar);
         botonEnviarArchivo = new JButton("Archivo");
+        // Abrir el explorador de archivos 
         botonEnviarArchivo.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 JFileChooser fileChooser = new JFileChooser();
